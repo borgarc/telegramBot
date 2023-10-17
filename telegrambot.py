@@ -1,5 +1,6 @@
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+import random
 import requests
 
 # URL to get the frames of the video
@@ -36,12 +37,15 @@ def custom_command(update: Update,context: CallbackContext):
 def handle_resonse(text: str) -> str:
     processed: str = text.lower()
 
-    if 'yes' == processed or 'y' == processed or 'n' == processed:
-        return "did the rocket launch yet? (y/n)"
-    if 'no' == processed:
-        return "Bye!"
+    if FRAME == TOTAL_FRAMES:
+        return "that's the frame you choose, to restart type /restart"
+    else:
+        if 'yes' == processed or 'y' == processed or 'n' == processed:
+            return "did the rocket launch yet? (y/n)"
+        if 'no' == processed:
+            return "Bye!"
 
-    return "Only Y or N answers"
+        return "Only Y or N answers"
 
 def send_image(chat_id, frame):
     url = URL + str(frame)
@@ -57,6 +61,7 @@ def handle_message(update: Update, context: CallbackContext):
     #global TOTAL_FRAMES
     text: str = update.message.text.lower()
     chat_id = update.message.chat.id
+    starting_frame = 0
     
     response: str = handle_resonse(text)
 
@@ -64,9 +69,12 @@ def handle_message(update: Update, context: CallbackContext):
     print(f'TOTAL_FRAMES {TOTAL_FRAMES}')
 
     if text == 'yes':
-        send_image(chat_id, TOTAL_FRAMES)
+        starting_frame = random.randint(0, 61695)
+        send_image(chat_id, starting_frame)
+    elif text == "no":
+        update.message.reply_text("if you wanna play type /restart")
     else:
-        bisect(text)
+        bisect(text, starting_frame)
         if text == 'y':
             send_image(chat_id, TOTAL_FRAMES)
         else:
@@ -80,11 +88,12 @@ def handle_message(update: Update, context: CallbackContext):
 def error(update: Update, context: CallbackContext):
     print(f'Update {update} caused error')
 
-def bisect(text):
+def bisect(text, starting_frame):
     """
     Runs a bisection.
 
     - `text` is the flag to make the bisection
+    - `starting_frame` the starting random frame
     """
     global TOTAL_FRAMES, FRAME
     left = FRAME
@@ -93,9 +102,15 @@ def bisect(text):
     mid = int((left + right) / 2)
 
     if text == 'y':
-        TOTAL_FRAMES = mid
+        if starting_frame == 0:
+            TOTAL_FRAMES = mid
+        else:
+            TOTAL_FRAMES = starting_frame
     if text == 'n':
-        FRAME = mid
+        if starting_frame == 0:
+            FRAME = mid
+        else:
+            FRAME = starting_frame
 
 if __name__ == '__main__':
     print("STARTING BOT")
